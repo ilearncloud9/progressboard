@@ -1,15 +1,15 @@
-{% extends 'index.html' %}
-{% block content %}
+{% extends 'index.html' %} {% block content %}
 <div id="title-bar">
   <h1>UpdateBoard</h1>
 </div>
 
-<!-- Send Get request to the same page to get the filtered results -->
-<form method="get" class="flex-row justify-center" id="filter-form">
+<div id="vue-main">
+  <!-- Send Get request to the same page to get the filtered results -->
+  <!-- <form method="get" class="flex-row justify-center" id="filter-form">
   <div class="flex-col form-input">
     <label for="start_date">Updated after</label>
     <input
-      type="date" 
+      type="date"
       placeholder="YYYY-mm-dd"
       id="start_date"
       name="start_date"
@@ -20,7 +20,7 @@
   <div class="flex-col form-input">
     <label for="end_date">Updated before</label>
     <input
-      type="date" 
+      type="date"
       placeholder="YYYY-mm-dd"
       id="end_date"
       name="end_date"
@@ -30,17 +30,43 @@
   <div class="flex-row items-end">
     <button class="btn">Filter results</button>
   </div>
-</form>
+</form> -->
 
-<div class="responsive-wrapper">
-  <ul id="button_list">
-        {% for repo in repos %}
-        <li>
-          <button onclick="location.href='{{repo.latest_commit_url if repo.latest_commit_url else repo.url}}'" class={{repo.status}} type="button" style="background-image:url({{repo.avatar}})" title={{repo.name}}>
-            {{repo.session}}-{{repo.exercise}} {{repo.name}}
-          </button>
-        </li>
-        {% endfor %}
-      </ul>
+  <div class="slider-container" v-if="!loading">
+    <vue-slider
+      :width="600"
+      :bar-height="100"
+      :data="commits_per_day"
+      :prettify="prettify"
+      :drag-interval="true"
+      :force-edges="false"
+      :colors="['#4facfe', '#00f2fe']"
+      :min="min_day.valueOf()"
+      :max="max_day.valueOf()"
+      @finish="updateRange"
+    />
+  </div>
+
+  <div class="responsive-wrapper">
+    <ul id="button_list">
+      <li v-for="repo in repos">
+        <button
+          @click="goToPage(repo.latest_commit_url ? repo.latest_commit_url : repo.url)"
+          :class="repo.status"
+          type="button"
+          :style="`background-image:url(${repo.avatar})`"
+          :title="repo.name"
+        >
+          [[ repo.session ]] - [[ repo.exercise ]] [[ repo.name ]]
+        </button>
+      </li>
+    </ul>
+  </div>
 </div>
+
+<script
+  src="{{ url_for('static', filename='repos.js') }}"
+  type="module"
+  setup
+></script>
 {% endblock %}

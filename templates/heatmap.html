@@ -1,57 +1,88 @@
-{% extends 'index.html' %}
-{% block content %}
+{% extends 'index.html' %} {% block content %}
 <div id="title-bar">
   <h1>ProgressBoard</h1>
 </div>
 
-<!-- Send Get request to the same page to get the filtered results -->
-<form method="get" class="flex-row justify-center" id="filter-form">
-  <div class="flex-col form-input">
-    <label for="start_date">Updated after</label>
-    <input type="date" placeholder="YYYY-mm-dd" id="start_date" name="start_date" value="{{start_date}}" />
+<div id="vue-main">
+  <!-- <form method="get" class="flex-row justify-center" id="filter-form">
+    <div class="flex-col form-input">
+      <label for="start_date">Updated after</label>
+      <input
+        placeholder="YYYY-mm-dd"
+        id="start_date"
+        name="start_date"
+        value="{{start_date}}"
+      />
+    </div>
+
+    <div class="flex-col form-input">
+      <label for="end_date">Updated before</label>
+      <input
+        placeholder="YYYY-mm-dd"
+        id="end_date"
+        name="end_date"
+        value="{{end_date}}"
+      />
+    </div>
+    <div class="flex-row items-end">
+      <button class="btn">Filter results</button>
+    </div>
+  </form> -->
+
+  <div class="slider-container" v-if="!loading">
+    <vue-slider
+      :width="600"
+      :bar-height="100"
+      :data="commits_per_day"
+      :prettify="prettify"
+      :drag-interval="true"
+      :force-edges="false"
+      :colors="['#4facfe', '#00f2fe']"
+      :min="min_day.valueOf()"
+      :max="max_day.valueOf()"
+      @finish="updateRange"
+    />
   </div>
 
-  <div class="flex-col form-input">
-    <label for="end_date">Updated before</label>
-    <input type="date" placeholder="YYYY-mm-dd" id="end_date" name="end_date" value="{{end_date}}" />
-  </div>
-<div class="flex-row items-end">
-<button class="btn">Filter results</button>
-</div>
-</form>
-
-
-<div class="responsive-wrapper">
-<table id="man-heatmap">
-  <tr class='header'>
-    <th class='color title'></th>
-    {% for session in range(1,16) %}
-    <th class='color session'><a href='#'>{{session}}</a></th>
-    {% endfor %}
-  </tr>
-  {% for user, repos in user_repos.items() %}
-  <tr>
-    <th class='color name'><a href='https://github.com/{{repos[0]['user']}}'><img src={{repos[0]['avatar']}} alt={{user}}/></a>
-                            <a href='https://github.com/{{repos[0]['user']}}'>{{user}}</a></th>
-    {% for session in range(1,16) %}
-    {% set outer_loop = loop %}
-    <td>
-      <div class="responsive-wrapper">
-      <ul class='color'>
-        {% for repo in repos %}
-        {% if (repo['session'] | int) == outer_loop.index %}
-        <li>
-          <button onclick="location.href='{{repo.latest_commit_url if repo.latest_commit_url else repo.url}}'" class={{repo.status}} type="button"  title={{repo.name}}>
-            {{repo.exercise}}
-          </button>
-        </li>
-        {% endif %}
+  <div class="responsive-wrapper">
+    <table id="man-heatmap">
+      <tr class="header">
+        <th class="color title"></th>
+        {% for session in range(1,16) %}
+        <th class="color session"><a href="#">{{session}}</a></th>
         {% endfor %}
-      </ul>
-      </div>
-    </td>
-    {% endfor %}
-  </tr>
-  {% endfor %}
-</table>
+      </tr>
+      <tr v-for="user in user_names" :key="user">
+        <th class="color name">
+          <a>
+            <img :src=" users[user][0].avatar" :alt="user" />
+          </a>
+          <a> [[ user ]] </a>
+        </th>
+        <td v-for="session in 16" :key="session">
+          <div class="responsive-wrapper">
+            <ul class="color">
+              <template v-for="repo in users[user]">
+                <li v-if="session == repo.session">
+                  <button
+                    @click="goToPage(repo.latest_commit_url ? repo.latest_commit_url : repo.url)"
+                    :class="repo.status"
+                    :title="repo.name"
+                  >
+                    [[ repo.exercise ]]
+                  </button>
+                </li>
+              </template>
+            </ul>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+<script
+  src="{{ url_for('static', filename='heatmap.js') }}"
+  type="module"
+  setup
+></script>
 {% endblock %}

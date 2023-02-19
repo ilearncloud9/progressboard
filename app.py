@@ -33,6 +33,20 @@ def filtered_repos(repos, lte, gte):
     ]
 
 
+def get_heatmap_data(items, start_date, end_date):
+    filtered_items = items
+
+    lte, gte = None, None
+    if end_date:
+        lte = datetime.strptime(end_date, '%Y-%m-%d')    
+    if start_date:
+        gte = datetime.strptime(start_date, '%Y-%m-%d')
+
+    filtered_items = {key: filtered_repos(values, lte, gte) for key, values in filtered_items.items() }
+    filtered_items = {key: values for key, values in filtered_items.items() if len(values) > 0 }
+    return filtered_items
+
+
 @app.route("/", methods=["GET", "POST"])
 def heatmap():
     if request.method == "POST":
@@ -42,22 +56,14 @@ def heatmap():
         start_date = request.args.get("start_date")
         end_date = request.args.get("end_date")
     
-    filtered_items = user_repos
+    filtered_items = get_heatmap_data(user_repos, start_date, end_date)
 
-    lte, gte = None, None
-    if end_date:
-        lte = datetime.strptime(end_date, '%Y-%m-%d')    
-    if start_date:
-        gte = datetime.strptime(start_date, '%Y-%m-%d')
-
-    filtered_items = {key: filtered_repos(values, lte, gte) for key, values in filtered_items.items() }
-    filtered_items = {key: values for key, values in filtered_items.items() if len(values) > 0 } # only keep the users with at least one commit
-    
     return render_template(
         "heatmap.html",
         user_repos=filtered_items,
-        start_date=start_date if start_date else "", # return filter data so jinja can auto fill them
-        end_date=end_date if end_date else "", # return filter data so jinja can auto fill them
+        repo_data=json.dumps(filtered_items),
+        start_date=start_date if start_date else "",
+        end_date=end_date if end_date else "",
     )
 
 @app.route("/semester/<string:semester>")
@@ -100,25 +106,46 @@ def updates():
 
 
 
+
 @app.route("/api/v1/data")
 def api_data():
-    request = jsonify(data)
-    request.headers.add("Access-Control-Allow-Origin", "*")
-    return request
+    resp = jsonify(data)
+    resp.headers.add("Access-Control-Allow-Origin", "*")
+    return resp
 
 
 @app.route("/api/v1/repos")
 def api_repos():
-    request = jsonify(repos)
-    request.headers.add("Access-Control-Allow-Origin", "*")
-    return request
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+
+    filtered_items = repos
+
+
+    lte, gte = None, None
+    if end_date:
+        lte = datetime.strptime(end_date, '%Y-%m-%d')
+    if start_date:
+        gte = datetime.strptime(start_date, '%Y-%m-%d')
+
+    filtered_items = filtered_repos(filtered_items, lte, gte)
+
+    resp = jsonify(filtered_items)
+    resp.headers.add("Access-Control-Allow-Origin", "*")
+    return resp
 
 
 @app.route("/api/v1/user_repos")
 def api_users():
-    request = jsonify(user_repos)
-    request.headers.add("Access-Control-Allow-Origin", "*")
-    return request
+
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+
+    filtered_items = get_heatmap_data(user_repos, start_date, end_date)
+
+    resp = jsonify(filtered_items)
+    resp.headers.add("Access-Control-Allow-Origin", "*")
+    return resp
 
 
 @app.route("/api/v1/user_repos/<string:semester>")

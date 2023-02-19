@@ -1,15 +1,25 @@
 <!DOCTYPE html>
-  <html>
-
+<html>
   <head>
     <title>Leaderboard</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://unpkg.com/vue-histogram-slider@0.3.8/dist/histogram-slider.css"
+    />
+
+    <script src="https://unpkg.com/vue-histogram-slider@0.3.8/dist/histogram-slider.umd.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
   </head>
 
   <body>
-    {% include 'header.html' %}
     {% block content %}{% endblock %}
-    {% include 'footer.html' %}
   </body>
-
-  </html>
+</html>
